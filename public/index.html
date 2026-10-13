@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RouteForge — Delivery Route Optimization Dashboard</title>
+    <meta name="description" content="Realistic C++ logistics and delivery route optimization dashboard.">
+    <!-- Google Fonts for modern premium typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Relative stylesheet path per Execution Engine standard -->
+    <link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+            <div class="brand">
+                <div class="brand-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="3 11 22 2 13 21 11 13 3 11"></polygon>
+                    </svg>
+                </div>
+                <div class="brand-text">
+                    <span class="brand-title">RouteForge</span>
+                    <span class="brand-badge">PRO v2.4</span>
+                </div>
+            </div>
+
+            <nav class="nav-menu">
+                <a href="#planner" class="nav-item active" id="nav-planner" data-tab="planner">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                    </svg>
+                    <span>Route Planner</span>
+                </a>
+                <a href="#deliveries" class="nav-item" id="nav-deliveries" data-tab="deliveries">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                    <span>Deliveries</span>
+                    <span class="nav-badge" id="nav-deliveries-count">6</span>
+                </a>
+                <a href="#fleet" class="nav-item" id="nav-fleet" data-tab="fleet">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="1" y="3" width="15" height="13"></rect>
+                        <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+                        <circle cx="5.5" cy="18.5" r="2.5"></circle>
+                        <circle cx="18.5" cy="18.5" r="2.5"></circle>
+                    </svg>
+                    <span>Fleet & Drivers</span>
+                </a>
+                <a href="#reports" class="nav-item" id="nav-reports" data-tab="reports">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="20" x2="18" y2="10"></line>
+                        <line x1="12" y1="20" x2="12" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                    <span>Analytics</span>
+                </a>
+                <a href="#overview" class="nav-item" id="nav-overview" data-tab="overview">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path>
+                        <path d="M2 12h20"></path>
+                    </svg>
+                    <span>Network Map</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="engine-indicator">
+                    <span class="engine-dot pulse"></span>
+                    <div class="engine-details">
+                        <span class="engine-label">C++ ENGINE</span>
+                        <span class="engine-status" id="engine-status-text">ONLINE (0.0.0.0:8080)</span>
+                    </div>
+                </div>
+                <div class="profile-card">
+                    <div class="profile-avatar">DO</div>
+                    <div class="profile-meta">
+                        <span class="profile-name">Dave Miller</span>
+                        <span class="profile-role">Lead Dispatcher</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-wrapper">
+            <!-- Top Header -->
+            <header class="app-header">
+                <div class="header-titles">
+                    <div class="breadcrumbs">Logistics Operations / Dispatch Console</div>
+                    <h1 class="page-title">Route Planner</h1>
+                    <p class="page-subtitle">Optimize delivery routes across your road network and dispatch fleet orders.</p>
+                </div>
+
+                <div class="header-actions">
+                    <button class="btn btn-secondary" id="btn-reset-scenario" title="Reset dataset to default scenario">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="1 4 1 10 7 10"></polyline>
+                            <polyline points="23 20 23 14 17 14"></polyline>
+                            <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path>
+                        </svg>
+                        <span>Reset Scenario</span>
+                    </button>
+
+                    <button class="btn btn-secondary" id="btn-import-dataset" title="Import new CSV or JSON delivery records">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        <span>Import Dataset</span>
+                    </button>
+
+                    <button class="btn btn-primary" id="btn-optimize-all" title="Run batch route optimization through C++ engine">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        </svg>
+                        <span>Optimize Routes</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- KPI Summary Cards -->
+            <section class="kpi-grid">
+                <div class="kpi-card" id="kpi-active-deliveries">
+                    <div class="kpi-icon-wrap icon-blue">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="1" y="3" width="15" height="13"></rect>
+                            <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+                            <circle cx="5.5" cy="18.5" r="2.5"></circle>
+                            <circle cx="18.5" cy="18.5" r="2.5"></circle>
+                        </svg>
+                    </div>
+                    <div class="kpi-content">
+                        <span class="kpi-label">Active Deliveries</span>
+                        <div class="kpi-value-row">
+                            <span class="kpi-value" id="kpi-active-val">1</span>
+                            <span class="kpi-trend trend-up">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+                                Planned
+                            </span>
+                        </div>
+                        <span class="kpi-hint">Assigned & routed stops</span>
+                    </div>
+                </div>
+
+                <div class="kpi-card" id="kpi-total-distance">
+                    <div class="kpi-icon-wrap icon-teal">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                        </svg>
+                    </div>
+                    <div class="kpi-content">
+                        <span class="kpi-label">Total Planned Distance</span>
+                        <div class="kpi-value-row">
+                            <span class="kpi-value" id="kpi-distance-val">20.0 km</span>
+                            <span class="kpi-badge badge-neutral">Dijkstra</span>
+                        </div>
+                        <span class="kpi-hint">Aggregated network road distance</span>
+                    </div>
+                </div>
+
+                <div class="kpi-card" id="kpi-estimated-cost">
+                    <div class="kpi-icon-wrap icon-emerald">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="1" x2="12" y2="23"></line>
+                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                        </svg>
+                    </div>
+                    <div class="kpi-content">
+                        <span class="kpi-label">Estimated Delivery Cost</span>
+                        <div class="kpi-value-row">
+                            <span class="kpi-value" id="kpi-cost-val">$ 62.50</span>
+                            <span class="kpi-trend trend-teal">Formula</span>
+                        </div>
+                        <span class="kpi-hint">Base + mileage rate + priority</span>
+                    </div>
+                </div>
+
+                <div class="kpi-card" id="kpi-unassigned-deliveries">
+                    <div class="kpi-icon-wrap icon-amber">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                    </div>
+                    <div class="kpi-content">
+                        <span class="kpi-label">Unassigned Deliveries</span>
+                        <div class="kpi-value-row">
+                            <span class="kpi-value" id="kpi-unassigned-val">5</span>
+                            <span class="kpi-trend trend-amber" id="kpi-unassigned-badge">Needs Action</span>
+                        </div>
+                        <span class="kpi-hint">Pending or unreachable requests</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Main Working Grid: Interactive Map + Selected Route Details -->
+            <div class="workspace-grid" id="view-planner">
+                <!-- Interactive Road Network Map -->
+                <section class="card map-panel">
+                    <div class="panel-header">
+                        <div class="panel-title-group">
+                            <h2 class="panel-title">Interactive Road Network Map</h2>
+                            <span class="panel-sub">Topology graph rendered from C++ engine models</span>
+                        </div>
+                        <div class="map-controls">
+                            <div class="map-status-pill" id="map-route-indicator">
+                                <span class="dot dot-active"></span>
+                                <span id="map-indicator-text">Viewing DEL_01</span>
+                            </div>
+                            <button class="btn-icon" id="btn-zoom-in" title="Zoom in">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+                            </button>
+                            <button class="btn-icon" id="btn-zoom-out" title="Zoom out">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+                            </button>
+                            <button class="btn-icon" id="btn-zoom-reset" title="Fit to network">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="map-canvas-container" id="map-container">
+                        <!-- Pure SVG Map -->
+                        <svg id="route-map" class="route-map-svg" viewBox="50 50 750 480" preserveAspectRatio="xMidYMid meet">
+                            <defs>
+                                <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                                    <feGaussianBlur stdDeviation="3" result="blur" />
+                                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                                </filter>
+                                <marker id="arrow-selected" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                    <path d="M 0 1 L 10 5 L 0 9 z" fill="#2563eb" />
+                                </marker>
+                                <marker id="arrow-oneway" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                    <path d="M 0 1 L 10 5 L 0 9 z" fill="#f59e0b" />
+                                </marker>
+                                <pattern id="map-grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(226, 232, 240, 0.6)" stroke-width="0.8" />
+                                </pattern>
+                            </defs>
+
+                            <!-- Background Grid -->
+                            <rect x="0" y="0" width="1000" height="700" fill="url(#map-grid)" />
+
+                            <!-- Roads Layers -->
+                            <g id="svg-roads-bg"></g>
+                            <g id="svg-roads-active"></g>
+
+                            <!-- Nodes Layers -->
+                            <g id="svg-nodes"></g>
+
+                            <!-- Stop Badges & Route Overlays -->
+                            <g id="svg-stops"></g>
+                        </svg>
+
+                        <!-- Unreachable / Error Alert Banner on Map -->
+                        <div class="map-overlay-alert hidden" id="map-unreachable-alert">
+                            <div class="alert-icon">⚠️</div>
+                            <div class="alert-body">
+                                <strong>Destination Unreachable</strong>
+                                <p id="map-unreachable-msg">No valid directed path exists from origin to destination.</p>
+                            </div>
+                        </div>
+
+                        <!-- Map Legend -->
+                        <div class="map-legend">
+                            <div class="legend-item"><span class="legend-swatch swatch-wh"></span> Warehouse Hub</div>
+                            <div class="legend-item"><span class="legend-swatch swatch-cust"></span> Delivery Stop</div>
+                            <div class="legend-item"><span class="legend-swatch swatch-active"></span> Selected Route</div>
+                            <div class="legend-item"><span class="legend-swatch swatch-oneway"></span> One-Way Road</div>
+                            <div class="legend-item"><span class="legend-swatch swatch-road"></span> Regular Road</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Selected Route Details Panel -->
+                <aside class="card route-details-panel">
+                    <div class="panel-header">
+                        <div>
+                            <h2 class="panel-title">Selected Route Details</h2>
+                            <span class="panel-sub" id="route-detail-del-id">Delivery: DEL_01</span>
+                        </div>
+                        <span class="status-badge badge-planned" id="route-detail-status">Planned</span>
+                    </div>
+
+                    <div class="route-summary-box">
+                        <div class="od-pair">
+                            <div class="od-node">
+                                <span class="od-tag tag-origin">ORIGIN</span>
+                                <span class="od-name" id="route-origin-name">WH_01 (Central DC)</span>
+                            </div>
+                            <div class="od-arrow">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </div>
+                            <div class="od-node">
+                                <span class="od-tag tag-dest">DEST</span>
+                                <span class="od-name" id="route-dest-name">LOC_D (South-East Depot)</span>
+                            </div>
+                        </div>
+
+                        <div class="route-metric-tiles">
+                            <div class="tile">
+                                <span class="tile-label">Total Distance</span>
+                                <span class="tile-val" id="route-detail-dist">20.0 km</span>
+                            </div>
+                            <div class="tile">
+                                <span class="tile-label">Estimated Cost</span>
+                                <span class="tile-val highlight" id="route-detail-cost">$ 62.50</span>
+                            </div>
+                            <div class="tile">
+                                <span class="tile-label">Total Stops</span>
+                                <span class="tile-val" id="route-detail-stops-count">2 stops</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ordered Stops Sequence -->
+                    <div class="section-title">Ordered Path Stops</div>
+                    <div class="stops-timeline" id="route-stops-timeline">
+                        <!-- Populated dynamically -->
+                    </div>
+
+                    <!-- Cost Breakdown Details -->
+                    <div class="section-title">Cost Calculation Breakdown</div>
+                    <div class="cost-breakdown-card">
+                        <div class="cost-row">
+                            <span>Base Dispatch Fee</span>
+                            <span class="cost-num" id="cost-base-fee">$ 12.50</span>
+                        </div>
+                        <div class="cost-row">
+                            <span>Distance Charge (<span id="cost-dist-calc">20.0 km × $1.75</span>)</span>
+                            <span class="cost-num" id="cost-distance-rate">$ 35.00</span>
+                        </div>
+                        <div class="cost-row">
+                            <span>Priority Surcharge (<span id="cost-prio-name">HIGH</span>)</span>
+                            <span class="cost-num" id="cost-prio-surcharge">$ 15.00</span>
+                        </div>
+                        <div class="cost-row total-row">
+                            <strong>Total Calculated Cost</strong>
+                            <strong class="cost-num total-num" id="cost-total-amount">$ 62.50</strong>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="route-panel-actions">
+                        <button class="btn btn-primary full-width" id="btn-optimize-current">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                            <span>Optimize This Delivery</span>
+                        </button>
+                    </div>
+                </aside>
+            </div>
+
+            <!-- Delivery Management Table Section -->
+            <section class="card table-panel" id="deliveries-table-section">
+                <div class="table-panel-header">
+                    <div class="table-title-area">
+                        <h2 class="panel-title">Delivery Requests</h2>
+                        <span class="panel-sub">Manage, filter, and dispatch batch delivery requests</span>
+                    </div>
+
+                    <div class="table-filters-area">
+                        <div class="filter-tabs">
+                            <button class="tab-pill active" data-filter="all">All <span class="tab-count" id="count-filter-all">6</span></button>
+                            <button class="tab-pill" data-filter="planned">Planned <span class="tab-count" id="count-filter-planned">1</span></button>
+                            <button class="tab-pill" data-filter="pending">Pending <span class="tab-count" id="count-filter-pending">4</span></button>
+                            <button class="tab-pill" data-filter="unreachable">Unreachable <span class="tab-count" id="count-filter-unreachable">1</span></button>
+                            <button class="tab-pill" data-filter="failed">Failed <span class="tab-count" id="count-filter-failed">0</span></button>
+                        </div>
+
+                        <div class="search-box">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                            <input type="text" id="delivery-search-input" placeholder="Search deliveries, origins, destinations...">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="data-table" id="deliveries-table">
+                        <thead>
+                            <tr>
+                                <th>Delivery ID</th>
+                                <th>Origin</th>
+                                <th>Destination</th>
+                                <th>Priority</th>
+                                <th>Distance</th>
+                                <th>Estimated Cost</th>
+                                <th>Status</th>
+                                <th>Stops</th>
+                                <th class="text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="deliveries-table-body">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Collapsible Diagnostics Panel -->
+            <section class="card diagnostics-panel" id="diagnostics-panel">
+                <div class="diagnostics-header" id="diagnostics-toggle">
+                    <div class="diag-header-left">
+                        <div class="diag-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                        </div>
+                        <div>
+                            <span class="diag-title">Engine Diagnostics & Investigation Console</span>
+                            <span class="diag-subtitle">Inspect raw C++ data structures, JSON engine payloads, and validation issues</span>
+                        </div>
+                    </div>
+                    <div class="diag-header-right">
+                        <span class="badge-tag" id="diag-status-badge">Engine Online</span>
+                        <button class="btn-icon" id="diag-collapse-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="diagnostics-body" id="diagnostics-body">
+                    <div class="diagnostics-tabs">
+                        <button class="diag-tab active" data-diag="route-json">Route Results (JSON)</button>
+                        <button class="diag-tab" data-diag="engine-logs">Engine Output</button>
+                        <button class="diag-tab" data-diag="input-data">Graph & Input Data</button>
+                        <button class="diag-tab" data-diag="validation">Validation Errors</button>
+                    </div>
+
+                    <div class="diag-content-wrapper">
+                        <!-- Route JSON Tab -->
+                        <div class="diag-content-pane active" id="pane-route-json">
+                            <div class="pane-toolbar">
+                                <span>Active Route JSON serialized from C++ RouteResult struct</span>
+                                <button class="btn btn-xs" id="btn-copy-route-json">Copy JSON</button>
+                            </div>
+                            <pre class="code-block" id="diag-route-json-text">// Loading route results...</pre>
+                        </div>
+
+                        <!-- Engine Output Tab -->
+                        <div class="diag-content-pane" id="pane-engine-logs">
+                            <div class="pane-toolbar">
+                                <span>Real-time engine execution logs & route calculation traces</span>
+                                <button class="btn btn-xs" id="btn-clear-logs">Clear View</button>
+                            </div>
+                            <div class="logs-console" id="diag-engine-logs-list">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+
+                        <!-- Input Data Tab -->
+                        <div class="diag-content-pane" id="pane-input-data">
+                            <div class="pane-toolbar">
+                                <span>Active Graph topology (nodes, edges) and request payload</span>
+                            </div>
+                            <pre class="code-block" id="diag-input-data-text">// Graph topology...</pre>
+                        </div>
+
+                        <!-- Validation Errors Tab -->
+                        <div class="diag-content-pane" id="pane-validation">
+                            <div class="pane-toolbar">
+                                <span>Parser errors, graph warnings, and delivery request constraints</span>
+                            </div>
+                            <div class="validation-list" id="diag-validation-list">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Import Dataset Modal -->
+    <div class="modal-backdrop hidden" id="modal-import">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title">Import Delivery Dataset</h3>
+                    <p class="modal-subtitle">Upload CSV delivery records or choose a pre-configured debugging test scenario.</p>
+                </div>
+                <button class="modal-close" id="btn-close-modal">&times;</button>
+            </div>
+
+            <div class="modal-body">
+                <div class="preset-scenarios">
+                    <span class="preset-label">Quick Debug Scenarios:</span>
+                    <button class="btn btn-sm btn-outline" id="btn-preset-default">Standard Scenario</button>
+                    <button class="btn btn-sm btn-outline" id="btn-preset-csv-optional">Sample CSV (With Empty Priority)</button>
+                    <button class="btn btn-sm btn-outline" id="btn-preset-fractional">Fractional Distances</button>
+                </div>
+
+                <div class="form-group">
+                    <label for="csv-input-area" class="form-label">CSV Dataset Content:</label>
+                    <textarea class="form-textarea" id="csv-input-area" rows="8" placeholder="id,origin,destination,priority,notes
+DEL_101,WH_01,LOC_B,HIGH,Fragile medical equipment
+DEL_102,WH_01,LOC_C,,Retail merchandise
+DEL_103,LOC_B,LOC_D,NORMAL,Heavy freight"></textarea>
+                </div>
+
+                <div class="import-hint">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                    <span>Expected headers: <code>id,origin,destination,priority,notes</code>. Priority can be LOW, NORMAL, HIGH, URGENT (defaults to NORMAL).</span>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="btn-cancel-import">Cancel</button>
+                <button class="btn btn-primary" id="btn-submit-import">
+                    <span>Parse and Import</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Application Javascript (relative path without leading slash) -->
+    <script src="./js/app.js"></script>
+</body>
+</html>

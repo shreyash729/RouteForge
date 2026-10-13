@@ -1,0 +1,17 @@
+{
+  "challenge_id": "cpp-routeforge-challenge",
+  "title": "RouteForge — Delivery Route Optimization Application",
+  "description": "Debug Dijkstra shortest path relaxation, directed road traversal, cost calculation precision, CSV empty optional fields parsing, and batch processor off-by-one indexing in a logistics delivery engine.",
+  "runtime_config": {
+    "runtime_type": "cpp-cmake",
+    "install_command": "cmake -B build -S . -DCMAKE_BUILD_TYPE=Release && cmake --build build -j2",
+    "start_command": "./start.sh",
+    "test_command": "./tests/run_tests.sh",
+    "ports": [
+      {
+        "container_port": 8080,
+        "type": "preview"
+      }
+    ]
+  }
+}

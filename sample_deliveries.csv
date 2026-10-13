@@ -1,0 +1,7 @@
+id,origin,destination,priority,notes
+DEL_101,WH_01,LOC_B,HIGH,Fragile medical equipment
+DEL_102,WH_01,LOC_C,,Express retail package with empty priority
+DEL_103,LOC_B,LOC_D,NORMAL,Standard freight cargo
+DEL_104,LOC_C,LOC_E,URGENT,Perishable groceries
+DEL_105,WH_01,LOC_F,,Industrial spare parts with empty priority
+DEL_106,WH_01,LOC_G,NORMAL,Port container dispatch
