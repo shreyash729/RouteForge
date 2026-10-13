@@ -955,23 +955,48 @@ body {
     dominant-baseline: central;
 }
 
-/* Node Elements */
+/* Node Elements - Rock-Solid Zero-Jitter Hover */
+.node-hitbox {
+    pointer-events: all !important;
+    cursor: pointer;
+}
+
 .map-node {
     cursor: pointer;
-    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.map-node:hover {
-    transform: scale(1.18);
+/* Crisp, instantaneous SVG highlights without dynamic CSS filters or transform scaling */
+.map-node:hover .node-cust-circle {
+    stroke: #1d4ed8;
+    stroke-width: 4.5px;
+    fill: #eff6ff;
 }
 
-/* Radar pulse wave around Warehouse */
+.map-node:hover .node-wh-badge {
+    stroke: #60a5fa;
+    stroke-width: 4px;
+    fill: #1e293b;
+}
+
+.map-node:hover .node-label-pill {
+    fill: #0f172a;
+    stroke: #60a5fa;
+    stroke-width: 1px;
+}
+
+.map-node:hover .stop-badge-rect {
+    stroke: #93c5fd;
+    stroke-width: 2.5px;
+}
+
+/* Radar pulse wave around Warehouse (strictly pointer-events none to prevent hover jitter) */
 .radar-wave {
     fill: none;
     stroke: #2563eb;
     stroke-width: 1.5;
     opacity: 0.8;
     animation: radar-ripple 2.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+    pointer-events: none !important;
 }
 
 @keyframes radar-ripple {
@@ -995,6 +1020,7 @@ body {
     fill: #ffffff;
     text-anchor: middle;
     dominant-baseline: central;
+    pointer-events: none;
 }
 
 .node-cust-circle {
@@ -1002,7 +1028,6 @@ body {
     stroke: #3b82f6;
     stroke-width: 3.5;
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.12));
-    transition: all 0.2s ease;
 }
 
 .node-cust-active {
@@ -1032,9 +1057,20 @@ body {
     fill: #ffffff;
     text-anchor: middle;
     dominant-baseline: central;
+    pointer-events: none;
 }
 
 /* Numbered Stop Flags along route */
+#svg-stops,
+.stop-badge-wrap,
+.stop-badge-rect,
+.stop-badge-text,
+#svg-road-pills,
+.road-pill-bg,
+.road-pill-text {
+    pointer-events: none !important;
+}
+
 .stop-badge-rect {
     fill: #2563eb;
     stroke: #ffffff;
@@ -1061,51 +1097,53 @@ body {
     dominant-baseline: central;
 }
 
-/* Floating Map Tooltip */
+/* Floating Node & Stop Hover Tooltip (pointer-events none prevents any jitter) */
+.map-tooltip,
+.map-tooltip * {
+    pointer-events: none !important;
+    user-select: none;
+}
+
 .map-tooltip {
     position: absolute;
-    pointer-events: none;
-    background-color: rgba(15, 23, 42, 0.95);
+    display: none;
+    flex-direction: column;
+    gap: 4px;
+    background: rgba(15, 23, 42, 0.95);
     backdrop-filter: blur(8px);
     color: #ffffff;
     padding: 10px 14px;
     border-radius: var(--radius-sm);
-    box-shadow: var(--shadow-lg);
-    font-size: 0.78rem;
-    z-index: 100;
-    display: none;
-    flex-direction: column;
-    gap: 4px;
-    min-width: 170px;
     border: 1px solid rgba(255, 255, 255, 0.15);
-    animation: tooltip-fade 0.15s ease;
-}
-
-@keyframes tooltip-fade {
-    from { opacity: 0; transform: translateY(4px); }
-    to { opacity: 1; transform: translateY(0); }
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.45), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+    z-index: 100;
+    white-space: nowrap;
 }
 
 .map-tooltip-title {
-    font-weight: 700;
     font-size: 0.85rem;
-    color: #38bdf8;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    font-weight: 700;
+    color: #60a5fa;
+    letter-spacing: -0.01em;
 }
 
 .map-tooltip-desc {
-    color: #cbd5e1;
     font-size: 0.75rem;
+    color: #e2e8f0;
 }
 
 .map-tooltip-roads {
-    margin-top: 4px;
-    padding-top: 4px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 0.7rem;
+    font-weight: 500;
     color: #94a3b8;
-    font-size: 0.72rem;
+    margin-top: 2px;
+}
+
+.stops-pill {
+    display: inline-block;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-secondary);
 }
 
 /* Floating Map Toolbar Controls */

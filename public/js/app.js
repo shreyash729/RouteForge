@@ -406,13 +406,14 @@
         }
         elements.svgRoadsActive.innerHTML = activeRoadsHtml;
 
-        // --- Render Nodes ---
+        // --- Render Nodes with Integrated Stop Badges and Contiguous Hitbox ---
         let nodesHtml = '';
         locations.forEach(loc => {
             const isWarehouse = loc.is_warehouse;
-            const isInActivePath = activePath.includes(loc.id);
-            const isOrigin = activePath.length > 0 && activePath[0] === loc.id;
-            const isDest = activePath.length > 0 && activePath[activePath.length - 1] === loc.id;
+            const pathIdx = (selectedRoute.success && activePath.length > 0) ? activePath.indexOf(loc.id) : -1;
+            const isInActivePath = pathIdx !== -1;
+            const isOrigin = pathIdx === 0;
+            const isDest = pathIdx === activePath.length - 1 && activePath.length > 0;
 
             let nodeClass = 'node-cust-circle';
             if (isDest) nodeClass += ' node-cust-dest';
@@ -420,8 +421,28 @@
 
             const labelWidth = loc.id.length * 7 + 14;
 
+            // Route Stop Badge (Integrated directly inside node group)
+            let stopBadgeHtml = '';
+            let stopRole = '';
+            if (isInActivePath) {
+                const stopLabel = isOrigin ? 'START' : isDest ? 'DROP' : (activePath.length <= 2 ? 'STOP' : `STOP ${pathIdx}`);
+                const badgeWidth = stopLabel.length * 6.5 + 16;
+                const badgeClass = isOrigin ? 'stop-badge-start' : isDest ? 'stop-badge-drop' : '';
+                stopRole = isOrigin ? 'Origin (Pickup)' : isDest ? 'Destination (Dropoff)' : `Transit Stop #${pathIdx}`;
+
+                stopBadgeHtml = `
+                    <g class="stop-badge-wrap" transform="translate(0, -28)">
+                        <rect x="-${badgeWidth / 2}" y="-10" width="${badgeWidth}" height="20" class="stop-badge-rect ${badgeClass}" />
+                        <text x="0" y="0" class="stop-badge-text">${stopLabel}</text>
+                    </g>
+                `;
+            }
+
             nodesHtml += `
-                <g class="map-node" data-id="${loc.id}" data-name="${loc.name}" transform="translate(${loc.x}, ${loc.y})">
+                <g class="map-node" data-id="${loc.id}" data-name="${loc.name}" data-stop-role="${stopRole}" transform="translate(${loc.x}, ${loc.y})">
+                    <!-- Contiguous transparent hitbox preventing any hover jitter or boundary gaps -->
+                    <rect x="-36" y="-42" width="72" height="84" fill="transparent" class="node-hitbox" />
+                    ${stopBadgeHtml}
                     ${isWarehouse ? `
                         <circle cx="0" cy="0" r="16" class="radar-wave" />
                         <rect x="-18" y="-18" width="36" height="36" class="node-wh-badge" />
@@ -438,30 +459,7 @@
             `;
         });
         elements.svgNodes.innerHTML = nodesHtml;
-
-        // --- Render Numbered Stop Flags along Route ---
-        let stopsHtml = '';
-        if (selectedRoute.success && activePath.length > 0) {
-            activePath.forEach((stopId, idx) => {
-                const loc = locMap[stopId];
-                if (!loc) return;
-
-                const isStart = idx === 0;
-                const isDrop = idx === activePath.length - 1;
-                const stopLabel = isStart ? 'START' : isDrop ? 'DROP' : `STOP ${idx}`;
-                const badgeWidth = stopLabel.length * 6.5 + 16;
-                const badgeClass = isStart ? 'stop-badge-start' : isDrop ? 'stop-badge-drop' : '';
-
-                // Offset cleanly above node to prevent overlapping
-                stopsHtml += `
-                    <g transform="translate(${loc.x}, ${loc.y - 28})">
-                        <rect x="-${badgeWidth / 2}" y="-10" width="${badgeWidth}" height="20" class="stop-badge-rect ${badgeClass}" />
-                        <text x="0" y="0" class="stop-badge-text">${stopLabel}</text>
-                    </g>
-                `;
-            });
-        }
-        elements.svgStops.innerHTML = stopsHtml;
+        elements.svgStops.innerHTML = '';
     }
 
     // 3. Render Selected Route Details Panel
@@ -487,22 +485,41 @@
         // Metrics
         const distance = selectedRoute.total_distance_km ?? delivery.planned_distance_km ?? 0.0;
         const cost = selectedRoute.estimated_cost ?? delivery.estimated_cost ?? 0.0;
-        const stopsCount = (selectedRoute.path || delivery.path_stops || []).length;
+        const rawPath = selectedRoute.path || delivery.path_stops || [];
+
+        // Accurate Stops Calculation:
+        // Direct routes (Origin -> Destination) have 0 intermediate stops.
+        let stopsText = '0 stops (Direct)';
+        if (rawPath.length > 2) {
+            const intermediateCount = rawPath.length - 2;
+            stopsText = `${intermediateCount} transit stop${intermediateCount === 1 ? '' : 's'}`;
+        } else if (rawPath.length === 2 || delivery.status === 'Planned') {
+            stopsText = '0 stops (Direct)';
+        } else if (delivery.status === 'Unreachable' || selectedRoute.status === 'Unreachable') {
+            stopsText = '0 (Unreachable)';
+        } else {
+            stopsText = '0 stops';
+        }
 
         elements.routeDetailDist.textContent = `${Number(distance).toFixed(1)} km`;
         elements.routeDetailCost.textContent = `$ ${Number(cost).toFixed(2)}`;
-        elements.routeDetailStopsCount.textContent = stopsCount > 0 ? `${stopsCount} stops` : '0 stops';
+        elements.routeDetailStopsCount.textContent = stopsText;
 
         // Stops Timeline
         const path = selectedRoute.path || delivery.path_stops || [];
         if (path.length > 0) {
-            elements.routeStopsTimeline.innerHTML = path.map((stop, i) => `
-                <div class="timeline-step">
-                    <span class="step-num">${i + 1}</span>
-                    <span class="step-name">${stop} - ${locMap[stop] || 'Network Hub'}</span>
-                    <span class="step-dist">${i === 0 ? 'Origin' : i === path.length - 1 ? 'Destination' : 'Transit'}</span>
-                </div>
-            `).join('');
+            elements.routeStopsTimeline.innerHTML = path.map((stop, i) => {
+                const isStart = i === 0;
+                const isEnd = i === path.length - 1;
+                const roleLabel = isStart ? 'Origin (Pickup)' : isEnd ? 'Destination (Drop)' : `Transit Stop ${i}`;
+                return `
+                    <div class="timeline-step">
+                        <span class="step-num">${i + 1}</span>
+                        <span class="step-name">${stop} - ${locMap[stop] || 'Network Hub'}</span>
+                        <span class="step-dist">${roleLabel}</span>
+                    </div>
+                `;
+            }).join('');
         } else {
             elements.routeStopsTimeline.innerHTML = `
                 <div style="font-size:0.8rem; color:#94a3b8; padding:8px 0;">No path computed for this delivery request.</div>
@@ -555,7 +572,19 @@
             const isSelected = d.id === appState.selected_delivery_id;
             const prioClass = `prio-${(d.priority || 'NORMAL').toLowerCase()}`;
             const statusClass = `badge-${(d.status || 'Pending').toLowerCase()}`;
-            const stopsCount = (d.path_stops || []).length;
+            const pathStops = d.path_stops || [];
+
+            let stopsDisplay = '-';
+            if (pathStops.length > 2) {
+                const count = pathStops.length - 2;
+                stopsDisplay = `${count} stop${count === 1 ? '' : 's'}`;
+            } else if (pathStops.length === 2 || d.status === 'Planned') {
+                stopsDisplay = '0 stops (Direct)';
+            } else if (d.status === 'Unreachable' || d.status === 'Failed') {
+                stopsDisplay = '0 (Unreachable)';
+            } else {
+                stopsDisplay = '-';
+            }
 
             return `
                 <tr class="${isSelected ? 'row-selected' : ''}" data-id="${d.id}">
@@ -566,7 +595,7 @@
                     <td class="mono-num">${d.planned_distance_km ? `${d.planned_distance_km.toFixed(1)} km` : '-'}</td>
                     <td class="mono-num">${d.estimated_cost ? `$ ${d.estimated_cost.toFixed(2)}` : '-'}</td>
                     <td><span class="status-badge ${statusClass}">${d.status}</span></td>
-                    <td>${stopsCount > 0 ? `${stopsCount} stops` : '-'}</td>
+                    <td><span class="stops-pill">${stopsDisplay}</span></td>
                     <td class="text-right">
                         <button class="btn btn-xs btn-outline btn-select-row" data-id="${d.id}">View</button>
                         <button class="btn btn-xs btn-primary btn-opt-row" data-id="${d.id}">Optimize</button>
@@ -676,29 +705,45 @@
             updateSvgViewBox();
         }, { passive: false });
 
-        // Node Hover Tooltips
-        elements.svgNodes.addEventListener('mouseover', (e) => {
+        // Stable, High-Performance Node Hover Tooltip Handler (Zero-Jitter)
+        let activeHoverNodeId = null;
+
+        svg.addEventListener('mousemove', (e) => {
             const node = e.target.closest('.map-node');
-            if (!node) return;
-            const id = node.getAttribute('data-id');
-            const name = node.getAttribute('data-name');
-            const connectedRoads = (appState.roads || []).filter(r => r.from_id === id || r.to_id === id).length;
+            if (node) {
+                const id = node.getAttribute('data-id');
+                const name = node.getAttribute('data-name');
+                const stopRole = node.getAttribute('data-stop-role');
+                if (activeHoverNodeId !== id) {
+                    activeHoverNodeId = id;
+                    const connectedRoads = (appState.roads || []).filter(r => r.from_id === id || r.to_id === id).length;
+                    elements.tooltipNodeId.textContent = stopRole ? `${id} • ${stopRole}` : id;
+                    elements.tooltipNodeName.textContent = name;
+                    elements.tooltipNodeRoads.textContent = `${connectedRoads} connected road corridor${connectedRoads === 1 ? '' : 's'}`;
+                    tooltip.style.display = 'flex';
+                }
+                const rect = container.getBoundingClientRect();
+                let x = e.clientX - rect.left + 16;
+                let y = e.clientY - rect.top + 16;
 
-            elements.tooltipNodeId.textContent = id;
-            elements.tooltipNodeName.textContent = name;
-            elements.tooltipNodeRoads.textContent = `${connectedRoads} connected road corridor${connectedRoads === 1 ? '' : 's'}`;
-            tooltip.style.display = 'flex';
+                // Flip away if nearing edges to ensure tooltip never collides with cursor
+                if (x + 220 > rect.width) {
+                    x = e.clientX - rect.left - 215;
+                }
+                if (y + 90 > rect.height) {
+                    y = e.clientY - rect.top - 85;
+                }
+
+                tooltip.style.left = `${Math.max(10, x)}px`;
+                tooltip.style.top = `${Math.max(10, y)}px`;
+            } else if (activeHoverNodeId !== null) {
+                activeHoverNodeId = null;
+                tooltip.style.display = 'none';
+            }
         });
 
-        elements.svgNodes.addEventListener('mousemove', (e) => {
-            const rect = container.getBoundingClientRect();
-            const x = e.clientX - rect.left + 15;
-            const y = e.clientY - rect.top + 15;
-            tooltip.style.left = `${Math.min(rect.width - 190, x)}px`;
-            tooltip.style.top = `${Math.min(rect.height - 90, y)}px`;
-        });
-
-        elements.svgNodes.addEventListener('mouseleave', () => {
+        svg.addEventListener('mouseleave', () => {
+            activeHoverNodeId = null;
             tooltip.style.display = 'none';
         });
 
@@ -826,7 +871,7 @@
             });
         });
 
-        // Table Selection & Row Optimization (with loading state)
+        // Table Selection & Row Optimization (with loading state & redirect to planner)
         elements.deliveriesTableBody.addEventListener('click', async (e) => {
             const row = e.target.closest('tr');
             if (!row) return;
@@ -834,14 +879,21 @@
             if (!delId) return;
 
             if (e.target.classList.contains('btn-opt-row')) {
-                await withButtonLoading(e.target, () => optimizeSingle(delId));
+                await withButtonLoading(e.target, async () => {
+                    await optimizeSingle(delId);
+                    switchTab('planner');
+                    setTimeout(() => centerOnRoute(), 60);
+                });
             } else if (e.target.classList.contains('btn-select-row')) {
                 await withButtonLoading(e.target, async () => {
                     await selectDelivery(delId);
                     switchTab('planner');
+                    setTimeout(() => centerOnRoute(), 60);
                 });
             } else {
-                selectDelivery(delId);
+                await selectDelivery(delId);
+                switchTab('planner');
+                setTimeout(() => centerOnRoute(), 60);
             }
         });
 
@@ -877,6 +929,7 @@
                         showToast('Scenario successfully reset to default logistics network.', 'info');
                         await fetchState();
                         fitToNetwork();
+                        switchTab('planner');
                     } catch (err) {
                         showToast(`Failed to reset scenario: ${err.message}`, 'error');
                     }
@@ -884,7 +937,7 @@
             });
         });
 
-        // Multi-page Batch Optimize Triggers
+        // Multi-page Batch Optimize Triggers (redirects to planner upon response)
         document.querySelectorAll('.btn-optimize-all-action').forEach(btn => {
             btn.addEventListener('click', () => {
                 withButtonLoading(btn, async () => {
@@ -896,6 +949,7 @@
                         const data = await res.json();
                         showToast(`Batch optimization complete: ${data.successful_routes} planned, ${data.unreachable_destinations} unreachable. Total: ${data.total_requests}`, 'success');
                         await fetchState();
+                        switchTab('planner');
                     } catch (err) {
                         showToast(`Batch optimization failed: ${err.message}`, 'error');
                     }
