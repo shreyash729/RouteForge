@@ -214,19 +214,15 @@ int main() {
             tc.test_fn();
             auto t_end = std::chrono::steady_clock::now();
             auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(t_end - t_start).count();
-            report[tc.name] = {
-                {"Status", "passed"},
-                {"Execution time", std::to_string(elapsed) + "ms"}
-            };
+            report[tc.name]["Status"] = "passed";
+            report[tc.name]["Execution time"] = std::to_string(elapsed) + "ms";
             passed++;
         } catch (const std::exception& ex) {
             auto t_end = std::chrono::steady_clock::now();
             auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(t_end - t_start).count();
-            report[tc.name] = {
-                {"Status", "failed"},
-                {"Execution time", std::to_string(elapsed) + "ms"},
-                {"Error", ex.what()}
-            };
+            report[tc.name]["Status"] = "failed";
+            report[tc.name]["Execution time"] = std::to_string(elapsed) + "ms";
+            report[tc.name]["Error"] = ex.what();
             failed++;
         }
     }

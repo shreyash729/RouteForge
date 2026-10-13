@@ -424,7 +424,7 @@ int main() {
         std::string del_id;
         try {
             json body = json::parse(req.body);
-            del_id = body.value("delivery_id", "");
+            del_id = body.value("delivery_id", std::string(""));
         } catch (...) {}
 
         json result = app.optimize_single(del_id);
@@ -442,7 +442,7 @@ int main() {
         std::string del_id;
         try {
             json body = json::parse(req.body);
-            del_id = body.value("delivery_id", "");
+            del_id = body.value("delivery_id", std::string(""));
         } catch (...) {}
 
         json result = app.select_delivery(del_id);
@@ -456,8 +456,8 @@ int main() {
         try {
             json body = json::parse(req.body);
             if (body.contains("content")) {
-                content = body.value("content", "");
-                format = body.value("format", "csv");
+                content = body.value("content", std::string(""));
+                format = body.value("format", std::string("csv"));
             }
         } catch (...) {
             // Raw body payload
@@ -470,7 +470,8 @@ int main() {
     // 8. Reset Scenario
     svr.Post("/api/reset", [&app](const httplib::Request&, httplib::Response& res) {
         app.reset_to_default_scenario();
-        json result = {{"status", "reset_ok"}};
+        json result;
+        result["status"] = "reset_ok";
         res.set_content(result.dump(), "application/json");
     });
 

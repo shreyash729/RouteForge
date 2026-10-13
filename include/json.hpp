@@ -39,19 +39,10 @@ public:
     json(const array_t& v) : value_(v) {}
     json(array_t&& v) : value_(std::move(v)) {}
 
-    // Support initializer lists:
-    // json j = { {"a", 1}, {"b", 2} };
-    json(std::initializer_list<std::pair<const std::string, json>> init) {
-        object_t obj;
-        for (const auto& p : init) {
-            obj[p.first] = p.second;
-        }
-        value_ = std::move(obj);
-    }
-
+    // Support nested initializer list:
+    // e.g. json j = { {"Status", "passed"}, {"Code", 200} };
     json(std::initializer_list<json> init) {
-        // Check if all elements are 2-element arrays of [string, json] -> treat as object
-        bool is_key_value = !init.empty();
+        bool is_key_value = (init.size() > 0);
         for (const auto& item : init) {
             if (!item.is_array() || item.size() != 2 || !item[0].is_string()) {
                 is_key_value = false;
@@ -172,6 +163,20 @@ public:
         } else {
             return T{};
         }
+    }
+
+    // Overloads for string/char* to prevent template array deduction issues
+    std::string value(const std::string& key, const char* fallback) const {
+        return value(key, std::string(fallback ? fallback : ""));
+    }
+
+    std::string value(const std::string& key, const std::string& fallback) const {
+        if (!is_object()) return fallback;
+        const auto& obj = std::get<object_t>(value_);
+        auto it = obj.find(key);
+        if (it == obj.end()) return fallback;
+        if (it->second.is_string()) return it->second.get<std::string>();
+        return fallback;
     }
 
     template <typename T>
