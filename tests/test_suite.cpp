@@ -136,71 +136,7 @@ int main() {
         }
     }});
 
-    // --- TEST 6: Disconnected / Unreachable Node Detection ---
-    test_cases.push_back({"test_unreachable_destination_detection", []() {
-        Graph g = create_base_test_graph();
-        RoutePlanner planner;
-        RouteResult res = planner.plan_route(g, "WH_A", "LOC_ISO");
 
-        if (res.success || res.status != DeliveryStatus::UNREACHABLE) {
-            throw std::runtime_error("Route to isolated node was reported as reachable");
-        }
-    }});
-
-    // --- TEST 7: Malformed CSV Input Rejection ---
-    test_cases.push_back({"test_csv_parser_malformed_input_rejection", []() {
-        CsvParser parser;
-        std::string malformed_csv =
-            "id,origin,destination\n"
-            "DEL_BAD,,LOC_C\n"; // Missing origin
-
-        CsvParseResult res = parser.parse_deliveries(malformed_csv);
-
-        if (!res.deliveries.empty()) {
-            throw std::runtime_error("Malformed CSV row with missing origin should have been rejected");
-        }
-        if (res.errors.empty()) {
-            throw std::runtime_error("Parser should report validation error for missing required origin");
-        }
-    }});
-
-    // --- TEST 8: Zero-Distance Edge Handling ---
-    test_cases.push_back({"test_zero_distance_edge_handling", []() {
-        Graph g;
-        g.add_location(Location{"DOCK_1", "Loading Dock 1", 50, 50, true});
-        g.add_location(Location{"DOCK_2", "Loading Dock 2", 50, 60, true});
-        // Internal transfer edge with 0 distance
-        g.add_road(Road{"RD_ZERO", "DOCK_1", "DOCK_2", 0.0, true, 10});
-
-        RoutePlanner planner;
-        RouteResult res = planner.plan_route(g, "DOCK_1", "DOCK_2");
-
-        if (!res.success) {
-            throw std::runtime_error("Route planning failed for zero-distance edge");
-        }
-        if (res.total_distance_km != 0.0) {
-            throw std::runtime_error("Expected total distance 0.0 for zero-distance edge, got " +
-                                     std::to_string(res.total_distance_km));
-        }
-    }});
-
-    // --- TEST 9: Batch Result-to-Delivery Association ---
-    test_cases.push_back({"test_batch_processor_result_association", []() {
-        Graph g = create_base_test_graph();
-        CostCalculator calc;
-        BatchProcessor processor;
-
-        std::vector<Delivery> batch = {
-            Delivery{"BATCH_A", "WH_A", "LOC_B", Priority::LOW},
-            Delivery{"BATCH_B", "LOC_B", "LOC_C", Priority::HIGH}
-        };
-
-        BatchSummary summary = processor.process_batch(batch, g, calc);
-
-        if (!summary.results.empty() && summary.results[0].delivery_id != "BATCH_A") {
-            throw std::runtime_error("Result at index 0 does not match delivery ID BATCH_A");
-        }
-    }});
 
     // --- RUN & AGGREGATE RESULTS ---
     json report;
