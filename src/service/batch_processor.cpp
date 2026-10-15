@@ -9,17 +9,8 @@ BatchSummary BatchProcessor::process_batch(std::vector<Delivery>& deliveries,
     summary.total_requests = deliveries.size();
     if (deliveries.empty()) return summary;
 
-    // =========================================================================
-    // BUG 5 (Intentional): Batch Processing Indexing Error
-    // The loop condition terminates prematurely at `deliveries.size() - 1`
-    // instead of `deliveries.size()`. This off-by-one defect skips the final
-    // delivery request in any batch, leaving it in PENDING status.
-    //
-    // Candidate fix:
-    // Change loop header to:
-    // for (size_t i = 0; i < deliveries.size(); ++i)
-    // =========================================================================
-    for (size_t i = 0; i < deliveries.size() - 1; ++i) { // <-- BUG: Skips the last delivery!
+   
+    for (size_t i = 0; i < deliveries.size() - 1; ++i) { 
         auto& del = deliveries[i];
         RouteResult route_res = planner_.plan_route(graph, del.origin_id, del.destination_id);
         route_res.delivery_id = del.id;
