@@ -34,17 +34,7 @@ void Graph::add_road(const Road& road) {
     roads_.push_back(road);
     adjacency_[road.from_id].push_back(road);
 
-    // =========================================================================
-    // BUG 2 (Intentional): Directed Roads Used in Reverse
-    // The engine treats all roads as bidirectional, adding a reverse edge even
-    // when `road.is_bidirectional` is false.
-    //
-    // Candidate fix:
-    // Wrap the reverse edge addition in:
-    // if (road.is_bidirectional) {
-    //     ...
-    // }
-    // =========================================================================
+   
     Road reverse_road = road;
     reverse_road.id = road.id + "_rev";
     reverse_road.from_id = road.to_id;
