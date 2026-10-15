@@ -79,24 +79,7 @@ RouteResult RoutePlanner::plan_route(const Graph& graph,
             const std::string& v = road.to_id;
             double weight = road.distance_km;
 
-            // =========================================================================
-            // BUG 1 (Intentional): Incorrect Dijkstra Relaxation / Premature Visited Marking
-            // The algorithm marks `v` as visited upon first queue insertion (like in BFS)
-            // instead of when popped from the priority queue.
-            // As a result, if a suboptimal direct edge (e.g., A -> D = 20 km) is examined
-            // first, `D` is marked visited, preventing subsequent relaxation from discovering
-            // the shorter path via intermediate hubs (e.g., A -> B -> C -> D = 14 km).
-            //
-            // Candidate fix:
-            // Remove `visited.insert(v)` below, and instead mark/check visited when `u` is
-            // popped from `pq`, or rely strictly on standard distance relaxation:
-            //
-            // if (dist[u] + weight < dist[v]) {
-            //     dist[v] = dist[u] + weight;
-            //     prev[v] = u;
-            //     pq.push({dist[v], v});
-            // }
-            // =========================================================================
+            
             if (visited.find(v) != visited.end()) {
                 continue;
             }
@@ -105,7 +88,7 @@ RouteResult RoutePlanner::plan_route(const Graph& graph,
                 dist[v] = dist[u] + weight;
                 prev[v] = u;
                 pq.push({dist[v], v});
-                visited.insert(v); // <-- BUG: Prematurely marks neighbor visited at insertion time!
+                visited.insert(v);
             }
         }
     }
