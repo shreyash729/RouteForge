@@ -92,20 +92,7 @@ CsvParseResult CsvParser::parse_deliveries(const std::string& csv_content) const
         delivery.origin_id = origin;
         delivery.destination_id = destination;
 
-        // =========================================================================
-        // BUG 4 (Intentional): Incorrect Handling of Empty Optional CSV Fields
-        // The optional `priority` column (tokens[3]) defaults to NORMAL when omitted or empty.
-        // However, the parser erroneously treats an empty optional priority field as a fatal error
-        // and skips the entire delivery row.
-        //
-        // Candidate fix:
-        // Replace this check with:
-        // if (tokens.size() > 3 && !tokens[3].empty()) {
-        //     delivery.priority = string_to_priority(tokens[3]);
-        // } else {
-        //     delivery.priority = Priority::NORMAL;
-        // }
-        // =========================================================================
+        
         if (tokens.size() > 3 && tokens[3].empty()) {
             result.errors.push_back("Row " + std::to_string(row_number) + ": Missing required priority field");
             continue; // <-- BUG: Skips the valid delivery row instead of defaulting priority to NORMAL!
