@@ -18,15 +18,8 @@ CostBreakdown CostCalculator::calculate_cost(double distance_km, Priority priori
     breakdown.base_fee = config_.base_fee;
     breakdown.priority_surcharge = get_priority_surcharge(priority);
 
-    // =========================================================================
-    // BUG 3 (Intentional): Incorrect Delivery Cost Precision
-    // The calculation casts fractional distance to an integer before multiplying
-    // by `rate_per_km`, dropping fractional distance and losing decimal precision.
-    //
-    // Candidate fix:
-    // breakdown.distance_cost = distance_km * config_.rate_per_km;
-    // =========================================================================
-    int int_distance = static_cast<int>(distance_km); // <-- BUG: drops fractional km!
+    
+    int int_distance = static_cast<int>(distance_km);
     breakdown.distance_cost = int_distance * config_.rate_per_km;
 
     breakdown.total_cost = breakdown.base_fee + breakdown.distance_cost + breakdown.priority_surcharge;
